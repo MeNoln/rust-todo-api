@@ -22,7 +22,9 @@ use dotenv::dotenv;
 mod middleware;
 
 mod services;
+use crate::services::todos::ITodoService;
 use crate::services::users::IUserService;
+use services::todos::{TodoService};
 use services::users::{UserService};
 
 mod types;
@@ -54,7 +56,8 @@ fn get_profile(r: &mut Request) -> IronResult<Response> {
 fn get_todos(r: &mut Request) -> IronResult<Response> {
     let user_id = get_user_header(r.headers.get_raw(middleware::authmiddleware::USERID_HEADER));
     
-    let todos = services::todos::get_todos(user_id);
+    let todo_service: TodoService = ITodoService::new();
+    let todos = todo_service.get_todos(user_id);
     Ok(format_response::<Vec<TodoResponse>>(todos, iron::status::Ok))
 }
 
@@ -64,7 +67,8 @@ fn get_todo(r: &mut Request) -> IronResult<Response> {
     let todo_id = get_id_route_param(r);
     println!("Searching for todo with id: {}", todo_id);
 
-    let todo = services::todos::get_todo(user_id, todo_id);
+    let todo_service: TodoService = ITodoService::new();
+    let todo = todo_service.get_todo(user_id, todo_id);
     if todo.is_some() {
         let raw = todo.unwrap();
         return Ok(format_response::<TodoResponse>(raw, iron::status::Ok))
@@ -85,7 +89,8 @@ fn create_todo(r: &mut Request) -> IronResult<Response> {
         Err(err) => return Ok(format_response::<Error>(Error{message: err.to_string()}, iron::status::BadRequest))
     }
     
-    let todo = services::todos::create_todo(user_id, todo);
+    let todo_service: TodoService = ITodoService::new();
+    let todo = todo_service.create_todo(user_id, todo);
     Ok(format_response::<TodoResponse>(todo, iron::status::Ok))
 }
 
@@ -99,7 +104,8 @@ fn delete_todo(r: &mut Request) -> IronResult<Response> {
     let todo_id = get_id_route_param(r);
     println!("Deleting todo with id: {}", todo_id);
 
-    let ok = services::todos::delete_todo(user_id, todo_id);
+    let todo_service: TodoService = ITodoService::new();
+    let ok = todo_service.delete_todo(user_id, todo_id);
     if !ok {
         return Ok(Response::with(iron::status::NotFound))
     }
