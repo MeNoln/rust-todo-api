@@ -11,6 +11,6 @@ pub struct UserIdResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct UserProdileResponse {
+pub struct UserProfileResponse {
     pub name: String
 }

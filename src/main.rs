@@ -19,12 +19,15 @@ use serde::ser::Serialize;
 use dotenv::dotenv;
 
 
-mod types;
-mod services;
 mod middleware;
 
+mod services;
+use crate::services::users::IUserService;
+use services::users::{UserService};
+
+mod types;
 use types::todo::{CreateTodoCommand, TodoResponse};
-use types::user::{UserProdileResponse, UserIdResponse};
+use types::user::{UserProfileResponse, UserIdResponse};
 use types::error::Error;
 
 fn ping(_: &mut Request) -> IronResult<Response> {
@@ -35,15 +38,17 @@ fn login(r: &mut Request) -> IronResult<Response> {
     let uname: &str = r.extensions.get::<Router>().unwrap().find("username").unwrap_or("");
     println!("Got username: {}", uname);
 
-    let user = services::users::login_user(uname);
+    let user_service: UserService = IUserService::new();
+    let user = user_service.login_user(uname);
     Ok(format_response::<UserIdResponse>(user, iron::status::Ok))
 }
 
 fn get_profile(r: &mut Request) -> IronResult<Response> {
     let user_id = get_user_header(r.headers.get_raw(middleware::authmiddleware::USERID_HEADER));
 
-    let user = services::users::get_user(user_id);
-    Ok(format_response::<UserProdileResponse>(user, iron::status::Ok))
+    let user_service: UserService = IUserService::new();
+    let user = user_service.get_user(user_id);
+    Ok(format_response::<UserProfileResponse>(user, iron::status::Ok))
 }
 
 fn get_todos(r: &mut Request) -> IronResult<Response> {
@@ -56,8 +61,7 @@ fn get_todos(r: &mut Request) -> IronResult<Response> {
 fn get_todo(r: &mut Request) -> IronResult<Response> {
     let user_id = get_user_header(r.headers.get_raw(middleware::authmiddleware::USERID_HEADER));
 
-    let ref todo_id_str = r.extensions.get::<Router>().unwrap().find("id").unwrap_or("0");
-    let todo_id: i32 = todo_id_str.parse().expect("Wanted a number");
+    let todo_id = get_id_route_param(r);
     println!("Searching for todo with id: {}", todo_id);
 
     let todo = services::todos::get_todo(user_id, todo_id);
@@ -89,15 +93,22 @@ fn update_todo(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((iron::status::Ok, "Hello")))
 }
 
-fn delete_todo(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((iron::status::Ok, "Hello")))
+fn delete_todo(r: &mut Request) -> IronResult<Response> {
+    let user_id = get_user_header(r.headers.get_raw(middleware::authmiddleware::USERID_HEADER));
+
+    let todo_id = get_id_route_param(r);
+    println!("Deleting todo with id: {}", todo_id);
+
+    let ok = services::todos::delete_todo(user_id, todo_id);
+    if !ok {
+        return Ok(Response::with(iron::status::NotFound))
+    }
+    
+    Ok(Response::with(iron::status::Ok))
 }
 
 fn main() {
     dotenv().ok();
-
-    let a = std::env::var("DATABASE_URL").unwrap();
-    println!("{}", a);
 
     let mut r = Router::new();
     
@@ -130,7 +141,7 @@ fn main() {
     delete_todo_chain.link_before(middleware::authmiddleware::AuthorizationMiddleware);
     r.delete("/api/todo/:id", delete_todo_chain, "delete");
 
-    println!("Start");
+    println!("Server started at :5000");
     Iron::new(r).http("0.0.0.0:5000").unwrap();
 }
 
@@ -150,4 +161,9 @@ fn get_user_header(header: Option<&[Vec<u8>]>) -> i32 {
         },
         None => return 0
     }
+}
+
+fn get_id_route_param(r: &mut Request) -> i32 {
+    let ref todo_id_str = r.extensions.get::<Router>().unwrap().find("id").unwrap_or("0");
+    return todo_id_str.parse().expect("Wanted a number");
 }

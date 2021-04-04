@@ -1,6 +1,12 @@
 use crate::types::todo::{CreateTodoCommand, TodoResponse};
 use crate::services::db::*;
 
+trait ITodoService{
+
+}
+
+pub struct TodoService{}
+
 static GET_TODOS: &str = "select id, title, description, datecreated, completed from todos where user_id = $1;";
 
 pub fn get_todos(user_id: i32) -> Vec<TodoResponse> {
@@ -56,4 +62,16 @@ pub fn create_todo(user_id: i32, todo: CreateTodoCommand) -> TodoResponse {
     let _ = conn.close();
 
     return get_todo(user_id, inserted_id).unwrap();
+}
+
+static DELETE_TODO: &str = "delete from todos where user_id = $1 and id = $2";
+
+pub fn delete_todo(user_id: i32, todo_id: i32) -> bool {
+    let mut conn = get_dbconn();
+
+    let res = &conn.execute(DELETE_TODO, &[&user_id, &todo_id]).unwrap();
+
+    let _ = conn.close();
+
+    return *res == 1;
 }

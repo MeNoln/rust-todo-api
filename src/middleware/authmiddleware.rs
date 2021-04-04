@@ -4,6 +4,7 @@ use std::fmt::{self, Debug};
 use std::error::Error;
 
 use crate::services::users;
+use crate::services::users::IUserService;
 
 static TOKEN_HEADER: &str = "X-User-Id";
 pub static USERID_HEADER: &str = "UserId";
@@ -16,8 +17,9 @@ impl BeforeMiddleware for AuthorizationMiddleware {
             Some(token_b) => {
                 let token = String::from_utf8(token_b[0].clone()).unwrap();
                 println!("Trying to access route with token: {}", token);
-
-                let exists = users::check_user_exists(token);
+                
+                let user_service: users::UserService = users::IUserService::new();
+                let exists = user_service.check_user_exists(token);
                 if !exists.0 {
                     println!("User with token not found.");
                     return return_unauth();
