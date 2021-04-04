@@ -15,6 +15,7 @@ create table IF NOT EXISTS todos (
 create table IF NOT EXISTS users (
     id serial,
     name varchar not null,
+    token varchar not null,
 
     PRIMARY KEY(id)
 );

@@ -1,4 +1,4 @@
-use crate::types::todo::{Todo, CreateTodoCommand, TodoResponse};
+use crate::types::todo::{CreateTodoCommand, TodoResponse};
 use crate::services::db::*;
 
 static GET_TODOS: &str = "select id, title, description, datecreated, completed from todos where user_id = $1;";
