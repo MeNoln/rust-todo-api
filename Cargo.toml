@@ -8,7 +8,6 @@ edition = "2018"
 
 [dependencies]
 iron = "0.5.1"
-iron-cors = "0.5.1"
 router = "0.5.1"
 chrono = "0.4"
 serde = "1.0.11"

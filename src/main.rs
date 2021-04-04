@@ -1,6 +1,5 @@
 extern crate router;
 extern crate iron;
-extern crate iron_cors;
 extern crate serde;
 extern crate dotenv;
 extern crate postgres;
@@ -14,7 +13,6 @@ extern crate serde_derive;
 
 
 use router::Router;
-use iron_cors::CorsMiddleware;
 use iron::prelude::*;
 use iron::mime::Mime;
 use serde::ser::Serialize;
